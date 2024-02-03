@@ -1,0 +1,41 @@
+name: Verify Markdown File Integrity
+
+on:
+  pull_request:
+    paths:
+      - 'doc.md' # Specify path to the markdown file in the second repo
+
+jobs:
+  check-file-integrity:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout current repo
+        uses: actions/checkout@v3
+        with:
+          path: current-repo
+
+      - name: Checkout external repo
+        uses: actions/checkout@v3
+        with:
+          repository: 'schalla0791/repo1' # Replace 'username/first-repo' with the actual user/repo name
+          path: external-repo
+          ref: main # Ensure this matches the branch name of the first repo
+
+      - name: Install dependencies
+        run: sudo apt-get install -y openssl
+
+      - name: Compare files
+        run: |
+          FILE1="current-repo/doc.md"
+          FILE2="external-repo/doc.md" # Ensure this path matches the one in the first repo
+
+          HASH1=$(sha256sum $FILE1 | awk '{print $1}')
+          HASH2=$(sha256sum $FILE2 | awk '{print $1}')
+
+          if [ "$HASH1" != "$HASH2" ]; then
+            echo "Files do not match!"
+            exit 1
+          else
+            echo "Files match."
+          fi
